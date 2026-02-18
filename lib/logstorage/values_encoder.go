@@ -1314,7 +1314,7 @@ func (vd *valuesDict) unmarshalInplace(src []byte) ([]byte, error) {
 	}
 	dictLen := int(src[0])
 	src = src[1:]
-	for i := 0; i < dictLen; i++ {
+	for i := range dictLen {
 		data, nSize := encoding.UnmarshalBytes(src)
 		if nSize <= 0 {
 			return srcOrig, fmt.Errorf("cannot umarshal value %d out of %d from dict", i, dictLen)

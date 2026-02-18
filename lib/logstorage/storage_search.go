@@ -1246,11 +1246,11 @@ func (db *DataBlock) UnmarshalInplace(src []byte, valuesBuf []string) ([]byte, [
 			src = src[n:]
 
 			value := bytesutil.ToUnsafeString(v)
-			for j := 0; j < rowsCount; j++ {
+			for j := range rowsCount {
 				valuesBufA[j] = value
 			}
 		case valuesTypeRegular:
-			for j := 0; j < rowsCount; j++ {
+			for j := range rowsCount {
 				v, n := encoding.UnmarshalBytes(src)
 				if n <= 0 {
 					return srcOrig, valuesBuf, fmt.Errorf("cannot unmarshal value #%d out of %d values for column #%d with name %q from len(src)=%d",

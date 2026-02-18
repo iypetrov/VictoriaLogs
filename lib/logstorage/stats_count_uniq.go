@@ -151,7 +151,7 @@ func unmarshalUint64Set(dst *map[uint64]struct{}, src []byte, stopCh <-chan stru
 		return src, 0, fmt.Errorf("cannot unmarshal %d uint64 values from %d bytes; need %d bytes", entriesLen, len(src), 8*entriesLen)
 	}
 	m := make(map[uint64]struct{}, entriesLen)
-	for i := uint64(0); i < entriesLen; i++ {
+	for range entriesLen {
 		u64 := encoding.UnmarshalUint64(src)
 		src = src[8:]
 
@@ -195,7 +195,7 @@ func unmarshalStringSet(a *chunkedAllocator, dst *map[string]struct{}, src []byt
 	stateSize := 0
 
 	m := make(map[string]struct{}, entriesLen)
-	for i := uint64(0); i < entriesLen; i++ {
+	for range entriesLen {
 		v, n := encoding.UnmarshalBytes(src)
 		if n <= 0 {
 			return src, 0, fmt.Errorf("cannot unmarshal string entry")

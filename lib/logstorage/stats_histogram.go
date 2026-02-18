@@ -202,7 +202,7 @@ func (shp *statsHistogramProcessor) importState(src []byte, _ <-chan struct{}) (
 
 	stateSizeIncrease := 0
 	m := make(map[string]uint64, bucketsLen)
-	for i := uint64(0); i < bucketsLen; i++ {
+	for range bucketsLen {
 		v, n := encoding.UnmarshalBytes(src)
 		if n <= 0 {
 			return 0, fmt.Errorf("cannot unmarshal vmrange")

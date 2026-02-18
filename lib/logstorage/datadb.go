@@ -1134,10 +1134,7 @@ func (ddb *datadb) getFlushToDiskDeadline(pws []*partWrapper) time.Time {
 
 func getMaxInmemoryPartSize() uint64 {
 	// Allocate 10% of allowed memory for in-memory parts.
-	n := uint64(0.1 * float64(memory.Allowed()) / maxInmemoryPartsPerPartition)
-	if n < 1e6 {
-		n = 1e6
-	}
+	n := max(uint64(0.1*float64(memory.Allowed())/maxInmemoryPartsPerPartition), 1e6)
 	return n
 }
 
@@ -1169,10 +1166,7 @@ func (ddb *datadb) getMaxSmallPartSize() uint64 {
 	// Small parts are cached in the OS page cache,
 	// so limit their size by the remaining free RAM.
 	mem := memory.Remaining()
-	n := uint64(mem) / defaultPartsToMerge
-	if n < 10e6 {
-		n = 10e6
-	}
+	n := max(uint64(mem)/defaultPartsToMerge, 10e6)
 	// Make sure the output part fits available disk space for small parts.
 	sizeLimit := getMaxOutBytes(ddb.path)
 	if n > sizeLimit {
@@ -1182,10 +1176,7 @@ func (ddb *datadb) getMaxSmallPartSize() uint64 {
 }
 
 func getMaxOutBytes(path string) uint64 {
-	n := availableDiskSpace(path)
-	if n > maxBigPartSize {
-		n = maxBigPartSize
-	}
+	n := min(availableDiskSpace(path), maxBigPartSize)
 	return n
 }
 
@@ -1386,14 +1377,8 @@ func appendPartsToMerge(dst, src []*partWrapper, maxOutBytes uint64) []*partWrap
 
 	sortPartsForOptimalMerge(src)
 
-	maxSrcParts := defaultPartsToMerge
-	if maxSrcParts > len(src) {
-		maxSrcParts = len(src)
-	}
-	minSrcParts := (maxSrcParts + 1) / 2
-	if minSrcParts < 2 {
-		minSrcParts = 2
-	}
+	maxSrcParts := min(defaultPartsToMerge, len(src))
+	minSrcParts := max((maxSrcParts+1)/2, 2)
 
 	// Exhaustive search for parts giving the lowest write amplification when merged.
 	var pws []*partWrapper

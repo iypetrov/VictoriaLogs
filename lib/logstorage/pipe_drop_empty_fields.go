@@ -2,6 +2,7 @@ package logstorage
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/VictoriaMetrics/VictoriaMetrics/lib/atomicutil"
 	"github.com/VictoriaMetrics/VictoriaMetrics/lib/slicesutil"
@@ -222,10 +223,8 @@ func parsePipeDropEmptyFields(lex *lexer) (pipe, error) {
 
 func hasEmptyValues(columnValues [][]string) bool {
 	for _, values := range columnValues {
-		for _, v := range values {
-			if v == "" {
-				return true
-			}
+		if slices.Contains(values, "") {
+			return true
 		}
 	}
 	return false
