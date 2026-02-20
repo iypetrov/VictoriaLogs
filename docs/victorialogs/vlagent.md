@@ -131,7 +131,7 @@ for all the collected logs before sending them to `-remoteWrite.url`:
 ./vlagent -kubernetesCollector.extraFields='{"env":"dev","cluster":"staging"}' ...
 ```
 
-To set the default [tenant](http://localhost:1313/victorialogs/#multitenancy) ID for logs collected from Kubernetes Pods, 
+To set the default [tenant](https://docs.victoriametrics.com/victorialogs/#multitenancy) ID for logs collected from Kubernetes Pods,
 pass `-kubernetesCollector.tenantID` command-line flag with a tenant ID in the format `accountID:projectID`.
 See also [multitenancy docs for vlagent](https://docs.victoriametrics.com/victorialogs/vlagent/#multitenancy).
 
@@ -316,7 +316,7 @@ via [vmalert](https://docs.victoriametrics.com/victoriametrics/vmalert/) or via 
 
 - `/insert/native`. This endpoint expects `AccountID` and `ProjectID` headers with the tenant ID to write logs to
   according to [these docs](https://docs.victoriametrics.com/victorialogs/#multitenancy).
-  These headers can be specified via `-remoteWrite.headers` command-line at `vlagent` side.
+  These headers can be specified via `-remoteWrite.headers` command-line flag at `vlagent` side.
   For example, the following command stores logs into `(AccountID=12, ProjectID=34)` tenant:
 
   ```sh
@@ -413,7 +413,7 @@ but it does require Docker on your computer. See [how to install Docker](https:/
 make vlagent-prod
 ```
 
-This will build the `victoria-logs-prod` executable inside the `bin` folder.
+This will build the `vlagent-prod` executable inside the `bin` folder.
 
 ## Advanced usage
 
