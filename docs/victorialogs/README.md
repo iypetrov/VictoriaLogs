@@ -275,6 +275,7 @@ This scheme can be implemented with the following simple cron job, which must ru
 
 1. To make a snapshot for the older day stored at NVMe via `/internal/partition/snapshot/create?partition_prefix=YYYYMMDD` endpoint.
 1. To copy the snapshot to the `<-storageDataPath>/partitions/YYYYMMDD` directory at VictoriaMetrics with HDD via [`rsync`](https://en.wikipedia.org/wiki/Rsync).
+1. To delete the created snapshot according to [these docs](https://docs.victoriametrics.com/victorialogs/#how-to-remove-snapshots).
 1. To detach the copied partition from the VictoriaLogs with NVMe via `/internal/partition/detach?name=YYYYMMDD` endpoint.
 1. To attach the copied partition to the VictoriaLogs with HDD via `/internal/partition/attach?name=YYYYMMDD` endpoint.
 1. To delete the copied partition directory from the VictoriaLogs with NVMe via `rm -rf <-storageDataPath>/partitions/YYYYMMDD` command.
@@ -358,7 +359,8 @@ The following HTTP endpoints are exposed at `http://victoria-logs:9428/` in this
   The `<logsql_filter>` may contain arbitrary [LogsQL filter](https://docs.victoriametrics.com/victorialogs/logsql/#filters).
   For example, request to `http://victoria-logs:9428/delete/run_task?filter={app=nginx}` starts a task for deleting all the logs with
   `{app="nginx"}` [log stream field](https://docs.victoriametrics.com/victorialogs/keyconcepts/#stream-fields).
-  When calling this endpoint via `curl`, make sure to URL-encode the `{...}` filter (aka [percent-encoding](https://en.wikipedia.org/wiki/Percent-encoding)), otherwise `curl` may strip the curly braces and the filter will fail to parse. For example, `{app=nginx}` becomes `%7Bapp%3Dnginx%7D`, so the full request is:
+  When calling this endpoint via `curl`, make sure to URL-encode the `{...}` filter (aka [percent-encoding](https://en.wikipedia.org/wiki/Percent-encoding)),
+  otherwise `curl` may strip the curly braces and the filter will fail to parse. For example, `{app=nginx}` becomes `%7Bapp%3Dnginx%7D`, so the full request is:
 
   ```bash
   curl 'http://victoria-logs:9428/delete/run_task?filter=%7Bapp%3Dnginx%7D'
