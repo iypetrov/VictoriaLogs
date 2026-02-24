@@ -157,6 +157,20 @@ Note that this query will be much slower than the recommended query above (thoug
 
 See [this article](https://itnext.io/why-victorialogs-is-a-better-alternative-to-grafana-loki-7e941567c4d5) for more details.
 
+### JSON arrays
+
+Loki users sometimes encode arrays into JSON and then try checking whether the array contains the given value at query time.
+This is often done with regexp or substring matching (e.g. `tags=~".*prod.*"`), which may produce false positives and is usually slow.
+
+If a VictoriaLogs field contains a valid JSON array (for example, `tags=["prod","canary"]`), then it can be filtered with the
+[`array_contains` filter](https://docs.victoriametrics.com/victorialogs/logsql/#array_contains-filter). For example:
+
+```logsql
+tags:array_contains("prod")
+```
+
+See also [`unpack_json` pipe](https://docs.victoriametrics.com/victorialogs/logsql/#unpack_json-pipe), which can be used for extracting JSON values into separate fields when needed.
+
 ## Logfmt parser
 
 Loki supports parsing logfmt-formatted log lines with the `{...} | logfmt` syntax according to [these docs](https://grafana.com/docs/loki/latest/query/log_queries/#pattern).

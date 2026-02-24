@@ -1096,6 +1096,33 @@ func TestParseFilterValueType(t *testing.T) {
 	f(`z:value_type("string")`, "z", "string")
 }
 
+func TestParseFilterArrayContains(t *testing.T) {
+	f := func(s, fieldNameExpected, valueExpected string) {
+		t.Helper()
+		q, err := ParseQuery(s)
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+		fa, ok := q.f.(*filterArrayContains)
+		if !ok {
+			t.Fatalf("unexpected filter type; got %T; want *filterArrayContains; filter: %s", q.f, q.f)
+		}
+		if fa.fieldName != fieldNameExpected {
+			t.Fatalf("unexpected fieldName; got %q; want %q", fa.fieldName, fieldNameExpected)
+		}
+		if fa.value != valueExpected {
+			t.Fatalf("unexpected value; got %q; want %q", fa.value, valueExpected)
+		}
+	}
+
+	f(`array_contains(foo)`, "_msg", "foo")
+	f(`foo:array_contains(bar)`, "foo", "bar")
+	f(`array_contains("")`, "_msg", "")
+	f("foo:array_contains(\"a\\\"b\")", "foo", "a\"b")
+	f("foo:array_contains(\"a\\nb\")", "foo", "a\nb")
+	f("foo:array_contains(\"a\\u0062\")", "foo", "ab")
+}
+
 func TestParseFilterRegexp(t *testing.T) {
 	f := func(s, reExpected string) {
 		t.Helper()

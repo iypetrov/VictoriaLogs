@@ -2065,6 +2065,8 @@ func parseFilterGeneric(lex *lexer, fieldName string) (filter, error) {
 		return parseFilterContainsAll(lex, fieldName)
 	case lex.isKeyword("contains_any"):
 		return parseFilterContainsAny(lex, fieldName)
+	case lex.isKeyword("array_contains"):
+		return parseFilterArrayContains(lex, fieldName)
 	case lex.isKeyword("contains_common_case"):
 		return parseFilterContainsCommonCase(lex, fieldName)
 	case lex.isKeyword("eq_field"):
@@ -2302,6 +2304,16 @@ func parseFilterValueType(lex *lexer, fieldName string) (filter, error) {
 			valueType: arg,
 		}
 		return fv, nil
+	})
+}
+
+func parseFilterArrayContains(lex *lexer, fieldName string) (filter, error) {
+	return parseFuncArg(lex, fieldName, func(_, arg string) (filter, error) {
+		fa := &filterArrayContains{
+			fieldName: getCanonicalColumnName(fieldName),
+			value:     arg,
+		}
+		return fa, nil
 	})
 }
 
