@@ -6,12 +6,13 @@ import (
 	"github.com/VictoriaMetrics/VictoriaMetrics/lib/fs"
 )
 
-func TestMatchArrayContains(t *testing.T) {
+func TestMatchJSONArrayContains(t *testing.T) {
 	t.Parallel()
 
 	f := func(s, value string, resultExpected bool) {
 		t.Helper()
-		result := matchArrayContains(s, value)
+
+		result := matchJSONArrayContains(s, value)
 		if result != resultExpected {
 			t.Fatalf("unexpected result for s=%q, value=%q; got %v; want %v", s, value, result, resultExpected)
 		}
@@ -26,21 +27,24 @@ func TestMatchArrayContains(t *testing.T) {
 	f("[]", "foo", false)
 	f(`["bar"]`, "foo", false)
 	f(`["bar","baz"]`, "foo", false)
+	f(`["bar","baz"]`, "", false)
 	f(`[1,2]`, "3", false)
 
 	// Array contains value
 	f(`["foo"]`, "foo", true)
 	f(`["bar","foo"]`, "foo", true)
 	f(`["foo","bar"]`, "foo", true)
+	f(`["foo","bar",""]`, "", true)
 	f(`["a","foo","b"]`, "foo", true)
 
 	// Mixed types
 	f(`[123]`, "123", true)
 	f(`[true]`, "true", true)
 	f(`["123"]`, "123", true)
+	f(`[null]`, "null", true)
 
-	// Leading whitespace (valid JSON)
-	f(" \t\r\n[\"foo\"]", "foo", true)
+	// Leading and trailing whitespace (valid JSON)
+	f(" \t\r\n[\"foo\"]  ", "foo", true)
 
 	// Tricky cases
 	f(`["foo bar"]`, "foo", false) // partial match
@@ -59,7 +63,7 @@ func TestMatchArrayContains(t *testing.T) {
 	f(`[["a"], "b"]`, "b", true)         // mixed with simple value
 }
 
-func TestFilterArrayContains(t *testing.T) {
+func TestFilterJSONArrayContains(t *testing.T) {
 	t.Parallel()
 
 	t.Run("const-column", func(t *testing.T) {
@@ -75,26 +79,26 @@ func TestFilterArrayContains(t *testing.T) {
 		}
 
 		// match
-		fa := &filterArrayContains{
+		fa := &filterJSONArrayContains{
 			fieldName: "foo",
 			value:     "a",
 		}
 		testFilterMatchForColumns(t, columns, fa, "foo", []int{0, 1, 2})
 
-		fa = &filterArrayContains{
+		fa = &filterJSONArrayContains{
 			fieldName: "foo",
 			value:     "b",
 		}
 		testFilterMatchForColumns(t, columns, fa, "foo", []int{0, 1, 2})
 
 		// mismatch
-		fa = &filterArrayContains{
+		fa = &filterJSONArrayContains{
 			fieldName: "foo",
 			value:     "c",
 		}
 		testFilterMatchForColumns(t, columns, fa, "foo", nil)
 
-		fa = &filterArrayContains{
+		fa = &filterJSONArrayContains{
 			fieldName: "non-existing-column",
 			value:     "a",
 		}
@@ -117,20 +121,20 @@ func TestFilterArrayContains(t *testing.T) {
 		}
 
 		// match
-		fa := &filterArrayContains{
+		fa := &filterJSONArrayContains{
 			fieldName: "foo",
 			value:     "a",
 		}
 		testFilterMatchForColumns(t, columns, fa, "foo", []int{1, 3})
 
-		fa = &filterArrayContains{
+		fa = &filterJSONArrayContains{
 			fieldName: "foo",
 			value:     "b",
 		}
 		testFilterMatchForColumns(t, columns, fa, "foo", []int{2, 3})
 
 		// mismatch
-		fa = &filterArrayContains{
+		fa = &filterJSONArrayContains{
 			fieldName: "foo",
 			value:     "c",
 		}
@@ -152,14 +156,14 @@ func TestFilterArrayContains(t *testing.T) {
 		}
 
 		// match
-		fa := &filterArrayContains{
+		fa := &filterJSONArrayContains{
 			fieldName: "foo",
 			value:     "apple",
 		}
 		testFilterMatchForColumns(t, columns, fa, "foo", []int{0, 3})
 
 		// mismatch
-		fa = &filterArrayContains{
+		fa = &filterJSONArrayContains{
 			fieldName: "foo",
 			value:     "pear",
 		}

@@ -2065,8 +2065,8 @@ func parseFilterGeneric(lex *lexer, fieldName string) (filter, error) {
 		return parseFilterContainsAll(lex, fieldName)
 	case lex.isKeyword("contains_any"):
 		return parseFilterContainsAny(lex, fieldName)
-	case lex.isKeyword("array_contains"):
-		return parseFilterArrayContains(lex, fieldName)
+	case lex.isKeyword("json_array_contains"):
+		return parseFilterJSONArrayContains(lex, fieldName)
 	case lex.isKeyword("contains_common_case"):
 		return parseFilterContainsCommonCase(lex, fieldName)
 	case lex.isKeyword("eq_field"):
@@ -2307,9 +2307,9 @@ func parseFilterValueType(lex *lexer, fieldName string) (filter, error) {
 	})
 }
 
-func parseFilterArrayContains(lex *lexer, fieldName string) (filter, error) {
+func parseFilterJSONArrayContains(lex *lexer, fieldName string) (filter, error) {
 	return parseFuncArg(lex, fieldName, func(_, arg string) (filter, error) {
-		fa := &filterArrayContains{
+		fa := &filterJSONArrayContains{
 			fieldName: getCanonicalColumnName(fieldName),
 			value:     arg,
 		}
@@ -4007,6 +4007,7 @@ var reservedKeywords = func() map[string]struct{} {
 		// functions
 		"contains_all",
 		"contains_any",
+		"json_array_contains",
 		"contains_common_case",
 		"eq_field",
 		"equals_common_case",

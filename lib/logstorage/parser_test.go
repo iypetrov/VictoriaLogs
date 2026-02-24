@@ -1096,16 +1096,16 @@ func TestParseFilterValueType(t *testing.T) {
 	f(`z:value_type("string")`, "z", "string")
 }
 
-func TestParseFilterArrayContains(t *testing.T) {
+func TestParseFilterJSONArrayContains(t *testing.T) {
 	f := func(s, fieldNameExpected, valueExpected string) {
 		t.Helper()
 		q, err := ParseQuery(s)
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
-		fa, ok := q.f.(*filterArrayContains)
+		fa, ok := q.f.(*filterJSONArrayContains)
 		if !ok {
-			t.Fatalf("unexpected filter type; got %T; want *filterArrayContains; filter: %s", q.f, q.f)
+			t.Fatalf("unexpected filter type; got %T; want *filterJSONArrayContains; filter: %s", q.f, q.f)
 		}
 		if fa.fieldName != fieldNameExpected {
 			t.Fatalf("unexpected fieldName; got %q; want %q", fa.fieldName, fieldNameExpected)
@@ -1115,12 +1115,12 @@ func TestParseFilterArrayContains(t *testing.T) {
 		}
 	}
 
-	f(`array_contains(foo)`, "_msg", "foo")
-	f(`foo:array_contains(bar)`, "foo", "bar")
-	f(`array_contains("")`, "_msg", "")
-	f("foo:array_contains(\"a\\\"b\")", "foo", "a\"b")
-	f("foo:array_contains(\"a\\nb\")", "foo", "a\nb")
-	f("foo:array_contains(\"a\\u0062\")", "foo", "ab")
+	f(`json_array_contains(foo)`, "_msg", "foo")
+	f(`foo:json_array_contains(bar)`, "foo", "bar")
+	f(`json_array_contains("")`, "_msg", "")
+	f("foo:json_array_contains(\"a\\\"b\")", "foo", "a\"b")
+	f("foo:json_array_contains(\"a\\nb\")", "foo", "a\nb")
+	f("foo:json_array_contains(\"a\\u0062\")", "foo", "ab")
 }
 
 func TestParseFilterRegexp(t *testing.T) {
@@ -1693,6 +1693,10 @@ func TestParseQuery_Success(t *testing.T) {
 	f("i(' foo ) bar')", `i(" foo ) bar")`)
 	f("i('foo bar'*)", `i("foo bar"*)`)
 	f(`foo:i(foo:bar-baz/aa+bb)`, `foo:i("foo:bar-baz/aa+bb")`)
+
+	// json_array_contains filter
+	f(`json_array_contains("foo")`, `json_array_contains(foo)`)
+	f(`json_array_contains('foo"')`, `json_array_contains("foo\"")`)
 
 	// in filter with values
 	f(`in()`, `in()`)
@@ -2564,6 +2568,12 @@ func TestParseQuery_Failure(t *testing.T) {
 	f(`i(a**)`)
 	f(`i("foo`)
 	f(`i(foo bar)`)
+
+	// invalid json_array_contains
+	f(`json_array_contains(`)
+	f(`json_array_contains()`)
+	f(`json_array_contains(foo, bar)`)
+	f(`json_array_contains(foo bar)`)
 
 	// invalid in
 	f(`in(`)
