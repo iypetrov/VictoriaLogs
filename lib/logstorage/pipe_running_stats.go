@@ -474,6 +474,8 @@ func getRunningStatsFuncParsers() map[string]runningStatsFuncParser {
 func initRunningStatsFuncParsers() {
 	runningStatsFuncParsers = map[string]runningStatsFuncParser{
 		"count": parseRunningStatsCount,
+		"first": parseRunningStatsFirst,
+		"last":  parseRunningStatsLast,
 		"max":   parseRunningStatsMax,
 		"min":   parseRunningStatsMin,
 		"sum":   parseRunningStatsSum,

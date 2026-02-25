@@ -4264,6 +4264,8 @@ See also:
 LogsQL supports the following functions for [`total_stats` pipe](https://docs.victoriametrics.com/victorialogs/logsql/#total_stats-pipe):
 
 - [`count`](https://docs.victoriametrics.com/victorialogs/logsql/#count-total_stats) returns the number of log entries.
+- [`first`](https://docs.victoriametrics.com/victorialogs/logsql/#first-total_stats) returns the given [log field](https://docs.victoriametrics.com/victorialogs/keyconcepts/#data-model) value for the log entry with the minimum [`_time`](https://docs.victoriametrics.com/victorialogs/keyconcepts/#time-field).
+- [`last`](https://docs.victoriametrics.com/victorialogs/logsql/#last-total_stats) returns the given [log field](https://docs.victoriametrics.com/victorialogs/keyconcepts/#data-model) value for the log entry with the maximum [`_time`](https://docs.victoriametrics.com/victorialogs/keyconcepts/#time-field).
 - [`max`](https://docs.victoriametrics.com/victorialogs/logsql/#max-total_stats) returns the maximum value over the given [log fields](https://docs.victoriametrics.com/victorialogs/keyconcepts/#data-model).
 - [`min`](https://docs.victoriametrics.com/victorialogs/logsql/#min-total_stats) returns the minimum value over the given [log fields](https://docs.victoriametrics.com/victorialogs/keyconcepts/#data-model).
 - [`sum`](https://docs.victoriametrics.com/victorialogs/logsql/#sum-total_stats) returns the sum for the given numeric [log fields](https://docs.victoriametrics.com/victorialogs/keyconcepts/#data-model).
@@ -4305,6 +4307,36 @@ See also:
 - [`sum`](https://docs.victoriametrics.com/victorialogs/logsql/#sum-total_stats)
 - [`min`](https://docs.victoriametrics.com/victorialogs/logsql/#min-total_stats)
 - [`max`](https://docs.victoriametrics.com/victorialogs/logsql/#max-total_stats)
+
+### first total_stats
+
+`first(fieldName)` [`total_stats` pipe function](https://docs.victoriametrics.com/victorialogs/logsql/#total_stats-pipe-functions) returns the value for the given `fieldName`
+[field](https://docs.victoriametrics.com/victorialogs/keyconcepts/#data-model) for the log with the minimum [`_time`](https://docs.victoriametrics.com/victorialogs/keyconcepts/#time-field)
+across the selected logs. For example, the following query adds the `first_event` field to the selected logs with the `event` field value for the minimum `_time` over the logs
+for the last 5 minutes:
+
+```logsql
+_time:5m | total_stats first(event) first_event
+```
+
+See also:
+
+- [`last`](https://docs.victoriametrics.com/victorialogs/logsql/#last-total_stats)
+
+### last total_stats
+
+`last(fieldName)` [`total_stats` pipe function](https://docs.victoriametrics.com/victorialogs/logsql/#total_stats-pipe-functions) returns the value for the given `fieldName`
+[field](https://docs.victoriametrics.com/victorialogs/keyconcepts/#data-model) for the log with the maximum [`_time`](https://docs.victoriametrics.com/victorialogs/keyconcepts/#time-field)
+across the selected logs. For example, the following query adds the `last_event` field to the selected logs with the `event` field value for the maximum `_time` over the logs
+for the last 5 minutes:
+
+```logsql
+_time:5m | total_stats last(event) last_event
+```
+
+See also:
+
+- [`first`](https://docs.victoriametrics.com/victorialogs/logsql/#first-total_stats)
 
 ### max total_stats
 

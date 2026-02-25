@@ -13,6 +13,8 @@ func TestParsePipeTotalStatsSuccess(t *testing.T) {
 	f(`total_stats count(*) as rows`)
 	f(`total_stats count(a*, b) as rows`)
 	f(`total_stats by (x, y) count(*) as rows, sum(n) as total_sum`)
+	f(`running_stats first(a) as first_a`)
+	f(`running_stats first(a, 4) as first_a`)
 }
 
 func TestParsePipeTotalStatsFailure(t *testing.T) {
@@ -33,6 +35,21 @@ func TestParsePipeTotalStatsFailure(t *testing.T) {
 
 	// duplicate output name
 	f(`total_stats sum() x, count() x`)
+
+	// missing field name in the first()
+	f(`running_stats first() as x`)
+
+	// wildcard arg for the first()
+	f(`running_stats first(a*) as x`)
+
+	// non-integer second arg for the first()
+	f(`running_stats first(a, b)`)
+
+	// negative second arg for the first()
+	f(`running_stats first(a, -1)`)
+
+	// too many args for the first()
+	f(`running_stats first(a, b, c)`)
 }
 
 func TestPipeTotalStats(t *testing.T) {
@@ -110,7 +127,13 @@ func TestPipeTotalStats(t *testing.T) {
 	})
 
 	// multiple results
-	f("total_stats count() total_count, sum(a) total_sum, min(b) total_b_min, max() total_max_all", [][]Field{
+	f(`total_stats
+		count() total_count,
+		sum(a) total_sum,
+		min(b) total_b_min,
+		max() total_max_all,
+		first(a, 1) first_a,
+		last(a, 1) last_a`, [][]Field{
 		{
 			{"_time", `bar`},
 			{"a", `1`},
@@ -132,6 +155,8 @@ func TestPipeTotalStats(t *testing.T) {
 			{"total_sum", "5"},
 			{"total_b_min", ""},
 			{"total_max_all", "foo"},
+			{"first_a", "1"},
+			{"last_a", "1"},
 		},
 		{
 			{"_time", `bar`},
@@ -140,6 +165,8 @@ func TestPipeTotalStats(t *testing.T) {
 			{"total_sum", "5"},
 			{"total_b_min", ""},
 			{"total_max_all", "foo"},
+			{"first_a", "1"},
+			{"last_a", "1"},
 		},
 		{
 			{"_time", "foo"},
@@ -149,6 +176,8 @@ func TestPipeTotalStats(t *testing.T) {
 			{"total_sum", "5"},
 			{"total_b_min", ""},
 			{"total_max_all", "foo"},
+			{"first_a", "1"},
+			{"last_a", "1"},
 		},
 	})
 
