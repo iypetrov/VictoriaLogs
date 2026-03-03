@@ -433,6 +433,8 @@ The following steps must be performed to make a backup of the given `YYYYMMDD` p
 
    The `--delete` option is required in the command above in order to ensures that the backup contains the full copy of the original data without superfluous files.
 
+   It is possible to make backups from VictoriaLogs snapshots to object storage such as S3 or GCS with the [rclone](https://rclone.org/).
+
 1. To remove the snapshot with `/internal/partition/snapshot/delete?path=<path-to-snapshot>` endpoint.
    See also [other ways to remove snapshots](https://docs.victoriametrics.com/victorialogs/#how-to-remove-snapshots).
    It is important to remove unneeded snapshots in order to free up storage space.
