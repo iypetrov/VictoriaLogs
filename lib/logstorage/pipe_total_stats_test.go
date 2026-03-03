@@ -14,7 +14,7 @@ func TestParsePipeTotalStatsSuccess(t *testing.T) {
 	f(`total_stats count(a*, b) as rows`)
 	f(`total_stats by (x, y) count(*) as rows, sum(n) as total_sum`)
 	f(`running_stats first(a) as first_a`)
-	f(`running_stats first(a, 4) as first_a`)
+	f(`running_stats first(a) offset 4 as first_a`)
 }
 
 func TestParsePipeTotalStatsFailure(t *testing.T) {
@@ -42,14 +42,12 @@ func TestParsePipeTotalStatsFailure(t *testing.T) {
 	// wildcard arg for the first()
 	f(`running_stats first(a*) as x`)
 
-	// non-integer second arg for the first()
+	// too many args for the first()
 	f(`running_stats first(a, b)`)
+	f(`running_stats first(a, b, c)`)
 
 	// negative second arg for the first()
-	f(`running_stats first(a, -1)`)
-
-	// too many args for the first()
-	f(`running_stats first(a, b, c)`)
+	f(`running_stats first(a) offset -1`)
 }
 
 func TestPipeTotalStats(t *testing.T) {
@@ -132,8 +130,8 @@ func TestPipeTotalStats(t *testing.T) {
 		sum(a) total_sum,
 		min(b) total_b_min,
 		max() total_max_all,
-		first(a, 1) first_a,
-		last(a, 1) last_a`, [][]Field{
+		first(a) offset 1 first_a,
+		last(a) offset 1 last_a`, [][]Field{
 		{
 			{"_time", `bar`},
 			{"a", `1`},

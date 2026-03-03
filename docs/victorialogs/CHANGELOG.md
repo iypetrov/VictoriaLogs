@@ -23,6 +23,8 @@ according to the following docs:
 ## tip
 
 * FEATURE: publish [SPDX](https://spdx.dev/) SBOM attestations for container images on `docker.io` and `quay.io`. See [SECURITY.md](https://github.com/VictoriaMetrics/VictoriaLogs/blob/master/SECURITY.md), [#1102](https://github.com/VictoriaMetrics/VictoriaLogs/issues/1102).
+* FEATURE: [LogsQL](https://docs.victoriametrics.com/victorialogs/logsql/): add support for `offset` modifier to [`first`](https://docs.victoriametrics.com/victorialogs/logsql/#first-total_stats) and [`last`](https://docs.victoriametrics.com/victorialogs/logsql/#last-total_stats) functions at the [`total_stats` pipe](https://docs.victoriametrics.com/victorialogs/logsql/#total_stats-pipe).
+* FEATURE: [LogsQL](https://docs.victoriametrics.com/victorialogs/logsql/): add [`last`](https://docs.victoriametrics.com/victorialogs/logsql/#last-running_stats) function at the [`running_stats` pipe](https://docs.victoriametrics.com/victorialogs/logsql/#running_stats-pipe). This can be used for comparing sequential log field values. See [#932](https://github.com/VictoriaMetrics/VictoriaLogs/issues/932).
 
 * BUGFIX: [LogsQL](https://docs.victoriametrics.com/victorialogs/logsql/): fix panic when executing the query `_stream_id:in`. See [#1136](https://github.com/VictoriaMetrics/VictoriaLogs/issues/1136).
 * BUGFIX: fix VictoriaLogs Docker OCI labels `org.opencontainers.image.source` and `org.opencontainers.image.documentation`: point them to VictoriaLogs repo/docs instead of VictoriaMetrics.

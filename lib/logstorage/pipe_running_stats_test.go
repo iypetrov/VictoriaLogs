@@ -15,10 +15,10 @@ func TestParsePipeRunningStatsSuccess(t *testing.T) {
 	f(`running_stats by (x) count(*) as rows, sum(x) as running_sum`)
 
 	f(`running_stats first(a) as first_a`)
-	f(`running_stats first(a, 4) as first_a`)
+	f(`running_stats first(a) offset 4 as first_a`)
 
 	f(`running_stats last(a) as last_a`)
-	f(`running_stats last(a, 4) as last_a`)
+	f(`running_stats last(a) offset 4 as last_a`)
 }
 
 func TestParsePipeRunningStatsFailure(t *testing.T) {
@@ -48,17 +48,15 @@ func TestParsePipeRunningStatsFailure(t *testing.T) {
 	f(`running_stats first(a*) as x`)
 	f(`running_stats last(a*) as x`)
 
-	// non-integer second arg for the first() and last()
+	// miltiple args arg for the first() and last()
 	f(`running_stats first(a, b)`)
 	f(`running_stats last(a, b)`)
-
-	// negative second arg for the first() and last()
-	f(`running_stats first(a, -1)`)
-	f(`running_stats last(a, -1)`)
-
-	// too many args for the first() and last()
 	f(`running_stats first(a, b, c)`)
 	f(`running_stats last(a, b, c)`)
+
+	// negative second arg for the first() and last()
+	f(`running_stats first(a) offset -1`)
+	f(`running_stats last(a) offset -1`)
 }
 
 func TestPipeRunningStats(t *testing.T) {
@@ -141,8 +139,8 @@ func TestPipeRunningStats(t *testing.T) {
 		sum(a) running_sum,
 		min(b) running_b_min,
 		max() running_max_all,
-		first(a, 1) first_a,
-		last(a, 1) last_a`, [][]Field{
+		first(a) offset 1 first_a,
+		last(a) offset 1 last_a`, [][]Field{
 		{
 			{"_time", `bar`},
 			{"a", `1`},

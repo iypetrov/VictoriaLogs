@@ -4151,6 +4151,7 @@ _time:5m | unroll if (value_type:="json_array") (value)
 LogsQL supports the following functions for [`running_stats` pipe](https://docs.victoriametrics.com/victorialogs/logsql/#running_stats-pipe):
 
 - [`count`](https://docs.victoriametrics.com/victorialogs/logsql/#count-running_stats) returns the number of log entries.
+- [`last`](https://docs.victoriametrics.com/victorialogs/logsql/#last-running_stats) returns the given [log field](https://docs.victoriametrics.com/victorialogs/keyconcepts/#data-model) value for the log entry with the previously seen [`_time`](https://docs.victoriametrics.com/victorialogs/keyconcepts/#time-field). It is useful for the comparison of field values in a sequence of `_time`-ordered logs.
 - [`max`](https://docs.victoriametrics.com/victorialogs/logsql/#max-running_stats) returns the maximum value over the given [log fields](https://docs.victoriametrics.com/victorialogs/keyconcepts/#data-model).
 - [`min`](https://docs.victoriametrics.com/victorialogs/logsql/#min-running_stats) returns the minimum value over the given [log fields](https://docs.victoriametrics.com/victorialogs/keyconcepts/#data-model).
 - [`sum`](https://docs.victoriametrics.com/victorialogs/logsql/#sum-running_stats) returns the sum for the given numeric [log fields](https://docs.victoriametrics.com/victorialogs/keyconcepts/#data-model).
@@ -4192,6 +4193,17 @@ See also:
 - [`sum`](https://docs.victoriametrics.com/victorialogs/logsql/#sum-running_stats)
 - [`min`](https://docs.victoriametrics.com/victorialogs/logsql/#min-running_stats)
 - [`max`](https://docs.victoriametrics.com/victorialogs/logsql/#max-running_stats)
+
+### last running_stats
+
+`last(fieldName)` [`running_stats` pipe function](https://docs.victoriametrics.com/victorialogs/logsql/#running_stats-pipe-functions) returns the value for the given `fieldName`
+[field](https://docs.victoriametrics.com/victorialogs/keyconcepts/#data-model) for the log with the maximum [`_time`](https://docs.victoriametrics.com/victorialogs/keyconcepts/#time-field)
+across already processed logs. For example, the following query adds the `prev_time` field to the selected logs with the `_time` field value for the previously processed log
+for the last 5 minutes:
+
+```logsql
+_time:5m | running_stats last(_time) offset 1 as prev_time
+```
 
 ### max running_stats
 
@@ -4316,6 +4328,12 @@ for the last 5 minutes:
 _time:5m | total_stats first(event) first_event
 ```
 
+It is possible to return the field value from the second, third, etc. log entry with the `offset` modifier. For example, the following query selects the second event instead of the first event:
+
+```logsql
+_time:5m | total_stats first(event) offset 1 second_event
+```
+
 See also:
 
 - [`last`](https://docs.victoriametrics.com/victorialogs/logsql/#last-total_stats)
@@ -4329,6 +4347,13 @@ for the last 5 minutes:
 
 ```logsql
 _time:5m | total_stats last(event) last_event
+```
+
+It is possible to return the field value from the second, third, etc. log entry before the end with the `offset` modifier.
+For example, the following query selects the second event from the end instead of the last event:
+
+```logsql
+_time:5m | total_stats last(event) offset 1 prev_event
 ```
 
 See also:
