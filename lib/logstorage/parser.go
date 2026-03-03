@@ -2978,16 +2978,13 @@ func parseFuncArgs(lex *lexer, fieldName string, callback func(funcName string, 
 }
 
 func parseFuncArgsPossibleWildcard(lex *lexer, fieldName string, callback func(args []string) (filter, error)) (filter, error) {
-	lexState := lex.backupState()
-
 	funcName, err := lex.nextCompoundToken()
 	if err != nil {
 		return nil, err
 	}
 
 	if !lex.isKeyword("(") {
-		lex.restoreState(lexState)
-		return parseFilterPhrase(lex, fieldName)
+		return nil, fmt.Errorf("the %q must be put in quotes", funcName)
 	}
 
 	args, isWildcard, err := parseArgsInParensPossibleWildcard(lex)
