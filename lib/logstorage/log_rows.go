@@ -345,6 +345,7 @@ func (lr *LogRows) mustAdd(tenantID TenantID, timestamp int64, fields []Field) {
 // - if there are too many log fields
 // - if there are too long log field names
 // - if the total length of log entries is too long
+// - if the log entry contains _stream or _stream_id fields (these fields clash with the automatically generated fields by VictoriaLogs)
 func (lr *LogRows) MustAdd(tenantID TenantID, timestamp int64, fields []Field, streamFieldsLen int) {
 	// Verify that the log entry doesn't exceed limits.
 	if len(fields) > maxColumnsPerBlock {
@@ -360,6 +361,12 @@ func (lr *LogRows) MustAdd(tenantID TenantID, timestamp int64, fields []Field, s
 			logger.Warnf("ignoring log entry with too long field name %q, since its length (%d) exceeds the limit %d bytes; "+
 				"see https://docs.victoriametrics.com/victorialogs/faq/#what-is-the-maximum-supported-field-name-length ; log entry: %s",
 				fieldName, len(fieldName), maxFieldNameSize, line)
+			return
+		}
+		if fieldName == "_stream" || fieldName == "_stream_id" {
+			line := MarshalFieldsToJSON(nil, fields)
+			logger.Warnf("ignoring log entry with the field %q, since this field clashes with the automatically generated field by VictoriaLogs; "+
+				"see https://docs.victoriametrics.com/victorialogs/keyconcepts/#stream-fields; log entry: %s", fieldName, line)
 			return
 		}
 	}
