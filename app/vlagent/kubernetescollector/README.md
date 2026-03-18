@@ -10,30 +10,44 @@ with support for mounting `/var/log/*` folders from the guest to the host system
 
 ## Setup
 
-1. Create `/var/log/containers` and `/var/log/pods` directories on your host system:
+### Create Kubernetes logs directories with proper permissions
 
-```bash
-mkdir -p /var/log/containers /var/log/pods
+#### MacOS
 
-# Ensure both vlagent and k3s have read/write permissions
-chmod a+rw /var/log/pods /var/log/containers
+```sh
+sudo mkdir -p /var/log/pods /var/log/containers
+# Grant read and write permissions on log folders to all users
+sudo chmod a+rw /var/log/pods /var/log/containers
 ```
 
-2. Create a k3d cluster with proper volume mounts:
+#### Linux
 
-```bash
-k3d cluster create -v /var/log/containers:/var/log/containers@all -v /var/log/pods:/var/log/pods@all
+On macOS, files created inside mounted folders inherit the permissions of the parent folder,
+so a simple `chmod` on the folder is enough.
+On Linux, new files are always created by root.
+We use `setfacl` with default ACL (`d:`) to define a rule that is automatically
+applied to all new files created inside the folder.
+
+```sh
+sudo mkdir -p /var/log/pods /var/log/containers
+sudo setfacl -R -m u:$(whoami):rx,d:u:$(whoami):rx /var/log/pods /var/log/containers
+```
+
+### Create a k3d cluster with proper volume mounts:
+
+```sh
+k3d cluster create test -v /var/log/containers:/var/log/containers@all -v /var/log/pods:/var/log/pods@all
 ```
 
 This command will also update the `~/.kube/config` file to use the new k3d cluster.
 vlagent will use this kubeconfig file to connect to the currently selected cluster.
 You can change the kubeconfig path via the `KUBECONFIG` environment variable.
 
-3. Run vlagent with Kubernetes discovery enabled:
+### Run vlagent with Kubernetes discovery enabled:
 
-```bash
+```sh
 ./vlagent -remoteWrite.url=http://localhost:9428/insert/native -kubernetesCollector
 ```
 
-vlagent connects to the Kubernetes API to discover pods and containers running in the cluster.
+vlagent connects to the Kubernetes API to discover Pods and containers running in the cluster.
 It reads logs from the `/var/log/containers` and `/var/log/pods` directories mounted on the host system.
