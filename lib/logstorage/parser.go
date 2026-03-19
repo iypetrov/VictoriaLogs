@@ -402,6 +402,9 @@ func (opts *queryOptions) String() string {
 	if opts.concurrency > 0 {
 		a = append(a, fmt.Sprintf("concurrency=%d", opts.concurrency))
 	}
+	if opts.parallelReaders > 0 {
+		a = append(a, fmt.Sprintf("parallel_readers=%d", opts.parallelReaders))
+	}
 	if opts.ignoreGlobalTimeFilter != nil {
 		a = append(a, fmt.Sprintf("ignore_global_time_filter=%v", *opts.ignoreGlobalTimeFilter))
 	}
@@ -966,6 +969,12 @@ func (q *Query) mustAppendPipe(s string) {
 func (q *Query) optimize() {
 	q.visitSubqueries(func(q *Query) {
 		q.optimizeNoSubqueries()
+	})
+}
+
+func (q *Query) enablePrintOptions() {
+	q.visitSubqueries(func(q *Query) {
+		q.opts.needPrint = true
 	})
 }
 
