@@ -357,11 +357,11 @@ func (s *Storage) GetFieldNames(qctx *QueryContext, filter string) ([]ValueWithH
 	return s.runValuesWithHitsQuery(qctxNew)
 }
 
-func getJoinMapGeneric(qctx *QueryContext, runQuery runQueryFunc, byFields []string, prefix string) (map[string][][]Field, error) {
+func getJoinRowsGeneric(qctx *QueryContext, runQuery runQueryFunc) ([][]Field, error) {
 	// TODO: track memory usage
 
-	m := make(map[string][][]Field)
-	var mLock sync.Mutex
+	var rows [][]Field
+	var rowsLock sync.Mutex
 	writeBlockResult := func(_ uint, br *blockResult) {
 		if br.rowsLen == 0 {
 			return
@@ -369,30 +369,15 @@ func getJoinMapGeneric(qctx *QueryContext, runQuery runQueryFunc, byFields []str
 
 		cs := br.getColumns()
 		columnNames := make([]string, len(cs))
-		byValuesIdxs := make([]int, len(cs))
 		for i := range cs {
-			name := strings.Clone(cs[i].name)
-			idx := slices.Index(byFields, name)
-			if prefix != "" && idx < 0 {
-				name = prefix + name
-			}
-			columnNames[i] = name
-			byValuesIdxs[i] = idx
+			columnNames[i] = strings.Clone(cs[i].name)
 		}
-
-		byValues := make([]string, len(byFields))
-		var tmpBuf []byte
 
 		for rowIdx := range br.rowsLen {
 			fields := make([]Field, 0, len(cs))
-			clear(byValues)
 			for j := range cs {
 				name := columnNames[j]
 				v := cs[j].getValueAtRow(br, rowIdx)
-				if cIdx := byValuesIdxs[j]; cIdx >= 0 {
-					byValues[cIdx] = v
-					continue
-				}
 				if v == "" {
 					continue
 				}
@@ -403,12 +388,9 @@ func getJoinMapGeneric(qctx *QueryContext, runQuery runQueryFunc, byFields []str
 				})
 			}
 
-			tmpBuf = marshalStrings(tmpBuf[:0], byValues)
-			k := string(tmpBuf)
-
-			mLock.Lock()
-			m[k] = append(m[k], fields)
-			mLock.Unlock()
+			rowsLock.Lock()
+			rows = append(rows, fields)
+			rowsLock.Unlock()
 		}
 	}
 
@@ -416,7 +398,7 @@ func getJoinMapGeneric(qctx *QueryContext, runQuery runQueryFunc, byFields []str
 		return nil, err
 	}
 
-	return m, nil
+	return rows, nil
 }
 
 func marshalStrings(dst []byte, a []string) []byte {
@@ -787,11 +769,11 @@ func initSubqueries(qctx *QueryContext, runQuery runQueryFunc, keepInSubquery bo
 		return nil, fmt.Errorf("cannot initialize `in` subqueries: %w", err)
 	}
 
-	getJoinMap := func(q *Query, byFields []string, prefix string) (map[string][][]Field, error) {
+	getJoinRows := func(q *Query) ([][]Field, error) {
 		qctxLocal := qctx.WithQuery(q)
-		return getJoinMapGeneric(qctxLocal, runQuery, byFields, prefix)
+		return getJoinRowsGeneric(qctxLocal, runQuery)
 	}
-	qNew, err = initJoinMaps(qNew, getJoinMap)
+	qNew, err = initJoinMaps(qNew, getJoinRows)
 	if err != nil {
 		return nil, fmt.Errorf("cannot initialize `join` subqueries: %w", err)
 	}
@@ -888,9 +870,9 @@ func hasUnionPipes(pipes []pipe) bool {
 	return false
 }
 
-type getJoinMapFunc func(q *Query, byFields []string, prefix string) (map[string][][]Field, error)
+type getJoinRowsFunc func(q *Query) ([][]Field, error)
 
-func initJoinMaps(q *Query, getJoinMap getJoinMapFunc) (*Query, error) {
+func initJoinMaps(q *Query, getJoinRows getJoinRowsFunc) (*Query, error) {
 	if !hasJoinPipes(q.pipes) {
 		return q, nil
 	}
@@ -898,7 +880,7 @@ func initJoinMaps(q *Query, getJoinMap getJoinMapFunc) (*Query, error) {
 	pipesNew := make([]pipe, len(q.pipes))
 	for i, p := range q.pipes {
 		if pj, ok := p.(*pipeJoin); ok {
-			pNew, err := pj.initJoinMap(getJoinMap)
+			pNew, err := pj.initJoinMap(getJoinRows)
 			if err != nil {
 				return nil, err
 			}

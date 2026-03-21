@@ -2504,7 +2504,8 @@ See also:
 
 ### join pipe
 
-The `<q1> | join by (<fields>) (<q2>)` [pipe](https://docs.victoriametrics.com/victorialogs/logsql/#pipes) joins `<q1>` [query](https://docs.victoriametrics.com/victorialogs/logsql/#query-syntax) results with the `<q2>` results by the given set of comma-separated `<fields>`.
+The `<q1> | join by (<fields>) (<q2>)` [pipe](https://docs.victoriametrics.com/victorialogs/logsql/#pipes)
+joins `<q1>` [query](https://docs.victoriametrics.com/victorialogs/logsql/#query-syntax) results with the `<q2>` results by the given set of comma-separated `<fields>`.
 This pipe works in the following way:
 
 1. It executes the `<q2>` [query](https://docs.victoriametrics.com/victorialogs/logsql/#query-syntax) and remembers its results.
@@ -2555,6 +2556,22 @@ See also:
 - [`stats` pipe](https://docs.victoriametrics.com/victorialogs/logsql/#stats-pipe)
 - [conditional `stats`](https://docs.victoriametrics.com/victorialogs/logsql/#stats-with-additional-filters)
 - [`filter` pipe](https://docs.victoriametrics.com/victorialogs/logsql/#filter-pipe)
+
+#### enriching logs with static fields
+
+The [`join` pipe](https://docs.victoriametrics.com/victorialogs/logsql/#join-pipe) supports joining by inline rows instead of executing the query
+by using the following syntax: `... | join by (some_field) rows({"f1":"v1",..."fN":"vN"}, ...)`.
+This is useful for enriching the selected logs with the pre-defined static fields. For example, the following query enriches the selected logs
+with `host` field depending on the `ip` field value:
+
+```logsql
+_time:5m | join by (ip) rows(
+    {"ip":"1.2.3.4", "host":"host-1"}
+    {"ip":"3.4.5.6", "host":"host-2"}
+)
+```
+
+It adds `host="host-1"` field to logs with the `ip="1.2.3.4"`, while adding `host="host-2"` to logs with the `ip="3.4.5.6"`.
 
 ### json_array_len pipe
 

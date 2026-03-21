@@ -764,11 +764,11 @@ func (q *Query) IsFixedOutputFieldsOrder() bool {
 
 		switch t := p.(type) {
 		case *pipeUnion:
-			if !t.q.IsFixedOutputFieldsOrder() {
+			if t.q == nil || !t.q.IsFixedOutputFieldsOrder() {
 				return false
 			}
 		case *pipeJoin:
-			if !t.q.IsFixedOutputFieldsOrder() {
+			if t.q == nil || !t.q.IsFixedOutputFieldsOrder() {
 				return false
 			}
 		}

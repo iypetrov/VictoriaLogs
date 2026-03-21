@@ -2222,6 +2222,7 @@ func TestParseQuery_Success(t *testing.T) {
 	f(`* | join by (x) (foo:bar)`, `* | join by (x) (foo:bar)`)
 	f(`* | join on (x, y) (foo:bar)`, `* | join by (x, y) (foo:bar)`)
 	f(`* | join (x, y) (foo:bar)`, `* | join by (x, y) (foo:bar)`)
+	f(`* | join by (x) rows({"foo":"bar","baz":"x"},{"a":"b"})`, `* | join by (x) rows({"foo":"bar","baz":"x"},{"a":"b"})`)
 
 	// json_array_len pipe
 	f(`* | json_array_len x`, `* | json_array_len(x)`)
@@ -3486,6 +3487,7 @@ func TestQueryGetNeededColumns(t *testing.T) {
 	f(`* | unroll (a, b) | count() r1`, `a,b`, ``)
 	f(`* | unroll if (q:w p:a) (a, b) | count() r1`, `a,b,p,q`, ``)
 	f(`* | join on (a, b) (xxx) | count() r1`, `a,b`, ``)
+	f(`* | join by (a) rows({"x":"y"}) | count() r1`, `a`, ``)
 	f(`* | json_array_len (x) | count() r1`, ``, ``)
 	f(`* | json_array_len (x) y | count() r1`, ``, ``)
 	f(`* | len(a) as b | count() r1`, ``, ``)
@@ -3702,6 +3704,7 @@ func TestQueryCanReturnLastNResults(t *testing.T) {
 	f("* | hash(x)", true)
 	f("* | hash(x) as _time", false)
 	f("* | join by (x) (foo)", false)
+	f("* | join by (x) rows({'a':'b'})", false)
 	f("* | json_array_len (x)", true)
 	f("* | json_array_len (x) as _time", false)
 	f("* | last 10 (x)", false)
@@ -3807,6 +3810,7 @@ func TestQueryCanLiveTail(t *testing.T) {
 	f("* | unpack_words a", true)
 	f("* | unroll by (a)", true)
 	f("* | join by (a) (b)", true)
+	f("* | join by (a) rows({'a':'b'})", true)
 	f("* | json_array_len (a)", true)
 	f("* | hash(a)", true)
 	f("* | sample 10", true)
@@ -4539,6 +4543,7 @@ func TestQueryIsFixedOutputFieldsOrder(t *testing.T) {
 	f("* | fields x | union (* | count())", true)
 	f("* | fields x | join by (a) (*)", false)
 	f("* | fields x | join by (a) (* | count())", true)
+	f("* | fields x | join by (a) rows({'a':'b','c':'d'})", false)
 
 	f("* | fields x, y", true)
 	f("* | fields x, y | sort by (a)", true)
