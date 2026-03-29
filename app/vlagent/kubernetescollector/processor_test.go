@@ -74,6 +74,19 @@ func TestProcessor(t *testing.T) {
 	}
 	f(in, expectedContents)
 
+	// Interleaved streams must keep independent partial state.
+	in = []string{
+		`2025-10-16T15:37:36.1Z stdout P 1`,
+		`2025-10-16T15:37:36.2Z stderr F 2`,
+		`2025-10-16T15:37:36.3Z stdout P 3`,
+		`2025-10-16T15:37:36.4Z stdout F 4`,
+	}
+	expectedContents = []string{
+		`{"_msg":"2","_stream":"{}","_time":"2025-10-16T15:37:36.2Z"}`,
+		`{"_msg":"134","_stream":"{}","_time":"2025-10-16T15:37:36.4Z"}`,
+	}
+	f(in, expectedContents)
+
 	// Max log line size
 	firstLine := strings.Repeat("a", maxLogLineSize/2-len("2025-10-16T15:37:36Z stderr P "))
 	secondLine := strings.Repeat("b", maxLogLineSize/2-len("2025-10-16T15:37:36.330062387Z stderr F "))
@@ -214,7 +227,7 @@ func TestParseKlogFailure(t *testing.T) {
 }
 
 func TestParseCRILine(t *testing.T) {
-	f := func(line string, timestampExpected int64, partialExpected bool, contentExpected string) {
+	f := func(line, streamExpected string, timestampExpected int64, partialExpected bool, contentExpected string) {
 		t.Helper()
 		criLine, err := parseCRILine([]byte(line))
 		if err != nil {
@@ -222,6 +235,9 @@ func TestParseCRILine(t *testing.T) {
 		}
 		if criLine.timestamp != timestampExpected {
 			t.Fatalf("unexpected timestamp; got %d; want %d", criLine.timestamp, timestampExpected)
+		}
+		if criLine.stream != streamExpected {
+			t.Fatalf("unexpected stream; got %q; want %q", criLine.stream, streamExpected)
 		}
 		if criLine.partial != partialExpected {
 			t.Fatalf("unexpected partial; got %v; want %v", criLine.partial, partialExpected)
@@ -232,17 +248,17 @@ func TestParseCRILine(t *testing.T) {
 	}
 
 	// Full line
-	f(`2025-10-16T15:37:36.330062387Z stderr F foo bar`, 1760629056330062387, false, "foo bar")
+	f(`2025-10-16T15:37:36.330062387Z stderr F foo bar`, "stderr", 1760629056330062387, false, "foo bar")
 
 	// Partial line
-	f(`2025-10-16T15:37:36Z stdout P partial log line`, 1760629056000000000, true, "partial log line")
+	f(`2025-10-16T15:37:36Z stdout P partial log line`, "stdout", 1760629056000000000, true, "partial log line")
 
 	// Empty content
-	f(`2025-10-16T15:37:36Z stdout P `, 1760629056000000000, true, "")
+	f(`2025-10-16T15:37:36Z stdout P `, "stdout", 1760629056000000000, true, "")
 
 	// Content with spaces
-	f(`2025-10-16T15:37:36Z stdout F  `, 1760629056000000000, false, " ")
-	f(`2025-10-16T15:37:36Z stdout F      `, 1760629056000000000, false, "     ")
+	f(`2025-10-16T15:37:36Z stdout F  `, "stdout", 1760629056000000000, false, " ")
+	f(`2025-10-16T15:37:36Z stdout F      `, "stdout", 1760629056000000000, false, "     ")
 }
 
 // Storage implements insertutil.LogRowsStorage interface
