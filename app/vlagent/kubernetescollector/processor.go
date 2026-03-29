@@ -66,14 +66,6 @@ type logFileProcessor struct {
 	partialCRIStderr partialCRILineState
 }
 
-type partialCRILineState struct {
-	// content accumulates the content of partial CRI log lines.
-	// Can be truncated if it exceeds maxLineSize.
-	content *bytesutil.ByteBuffer
-	// size tracks the actual size of the content.
-	size int
-}
-
 // newLogFileProcessor returns a new logFileProcessor for the given storage.
 // commonFields must not be modified as they can be accessed from multiple goroutines.
 func newLogFileProcessor(storage insertutil.LogRowsStorage, commonFields []logstorage.Field) *logFileProcessor {
@@ -124,11 +116,17 @@ func (lfp *logFileProcessor) tryAddLine(logLine []byte) (bool, error) {
 		return false, fmt.Errorf("cannot parse CRI line content %q: %w", logLine, err)
 	}
 
-	timestamp, content, ok := lfp.joinPartialLines(criLine)
+	prevState := &lfp.partialCRIStderr
+	if criLine.stream == streamStdout {
+		prevState = &lfp.partialCRIStdout
+	}
+	timestamp, content, ok := lfp.joinPartialLines(prevState, criLine)
 	if !ok {
 		// The log content is not yet complete.
 		return false, nil
 	}
+	defer prevState.reset()
+
 	if len(content) == 0 {
 		// The log content is truncated or empty.
 		// Skip such lines.
@@ -136,20 +134,35 @@ func (lfp *logFileProcessor) tryAddLine(logLine []byte) (bool, error) {
 	}
 
 	lfp.addLineInternal(timestamp, content)
-	// Release buffers if possible.
-	if lfp.partialCRIStderr.content != nil && lfp.partialCRIStderr.content.Len() == 0 {
-		lfp.partialCRIStderr.mustClose()
-	}
-	if lfp.partialCRIStdout.content != nil && lfp.partialCRIStdout.content.Len() == 0 {
-		lfp.partialCRIStdout.mustClose()
-	}
-
 	return true, nil
 }
 
-func (lfp *logFileProcessor) joinPartialLines(criLine criLine) (int64, []byte, bool) {
-	state := lfp.getPartialCRILineState(criLine.stream)
+type partialCRILineState struct {
+	// content accumulates the content of partial CRI log lines.
+	// Can be truncated if it exceeds maxLineSize.
+	content *bytesutil.ByteBuffer
+	// size tracks the actual size of the content.
+	size int
+}
 
+func (pcs *partialCRILineState) reset() {
+	if pcs.content != nil {
+		partialCRIContentBufPool.Put(pcs.content)
+		pcs.content = nil
+	}
+	pcs.size = 0
+}
+
+func (lfp *logFileProcessor) joinPartialLines(state *partialCRILineState, criLine criLine) (int64, []byte, bool) {
+	if !criLine.partial && (state.content == nil || state.content.Len() == 0) {
+		// Fast path: the log line is complete and not split.
+		return criLine.timestamp, criLine.content, true
+	}
+	// Slow path: line is split into multiple lines.
+	return lfp.joinPartialLinesSlow(state, criLine)
+}
+
+func (lfp *logFileProcessor) joinPartialLinesSlow(state *partialCRILineState, criLine criLine) (int64, []byte, bool) {
 	if criLine.partial {
 		// The log line is split into multiple lines.
 		// Accumulate the content until the full line is received.
@@ -165,40 +178,18 @@ func (lfp *logFileProcessor) joinPartialLines(criLine criLine) (int64, []byte, b
 		return 0, nil, false
 	}
 
-	if state.content == nil || state.content.Len() == 0 {
-		// The log line is complete and not split.
-		return criLine.timestamp, criLine.content, true
-	}
-
 	// The final part of the split log line received.
 
 	state.size += len(criLine.content)
 	if state.size > maxLogLineSize {
 		// Discard the too large log line.
 		reportLogRowSizeExceeded(lfp.commonFields, state.size)
-
-		state.content.Reset()
-		state.size = 0
-
 		return 0, nil, true
 	}
 
 	state.content.MustWrite(criLine.content)
 	content := state.content.B
-
-	state.content.Reset()
-	state.size = 0
-
 	return criLine.timestamp, content, true
-}
-
-func (lfp *logFileProcessor) getPartialCRILineState(stream string) *partialCRILineState {
-	if stream == "stderr" {
-		return &lfp.partialCRIStderr
-	}
-	// Should be "stdout", no other stream is expected in CRI logs.
-	// Treat unknown streams as "stdout" to be safe.
-	return &lfp.partialCRIStdout
 }
 
 func (lfp *logFileProcessor) addLineInternal(criTimestamp int64, line []byte) {
@@ -423,25 +414,24 @@ func fieldIndex(fields []logstorage.Field, names []string) int {
 }
 
 func (lfp *logFileProcessor) mustClose() {
-	lfp.partialCRIStdout.mustClose()
-	lfp.partialCRIStderr.mustClose()
+	lfp.partialCRIStderr.reset()
+	lfp.partialCRIStdout.reset()
 	logstorage.PutLogRows(lfp.lr)
 	lfp.lr = nil
 }
 
-func (pcs *partialCRILineState) mustClose() {
-	if pcs.content != nil {
-		partialCRIContentBufPool.Put(pcs.content)
-		pcs.content = nil
-	}
-	pcs.size = 0
-}
+type stream byte
+
+const (
+	streamStdout stream = 0
+	streamStderr stream = 1
+)
 
 type criLine struct {
 	// timestamp of the log entry, from the perspective of Container Runtime.
 	timestamp int64
-	// stream contains the output stream name such as stdout or stderr.
-	stream string
+	// stream contains the output stream such as stdout or stderr.
+	stream stream
 	// partial is true if the log line is split into multiple lines.
 	partial bool
 	// content of the log entry.
@@ -465,7 +455,10 @@ func parseCRILine(b []byte) (criLine, error) {
 	if n < 0 {
 		return criLine{}, fmt.Errorf("unexpected end of stream")
 	}
-	stream := bytesutil.ToUnsafeString(b[:n])
+	stream := streamStderr
+	if string(b[:n]) == "stdout" {
+		stream = streamStdout
+	}
 	b = b[n+1:]
 
 	n = bytes.IndexByte(b, ' ')

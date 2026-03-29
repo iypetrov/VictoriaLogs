@@ -227,7 +227,7 @@ func TestParseKlogFailure(t *testing.T) {
 }
 
 func TestParseCRILine(t *testing.T) {
-	f := func(line, streamExpected string, timestampExpected int64, partialExpected bool, contentExpected string) {
+	f := func(line string, streamExpected stream, timestampExpected int64, partialExpected bool, contentExpected string) {
 		t.Helper()
 		criLine, err := parseCRILine([]byte(line))
 		if err != nil {
@@ -248,17 +248,17 @@ func TestParseCRILine(t *testing.T) {
 	}
 
 	// Full line
-	f(`2025-10-16T15:37:36.330062387Z stderr F foo bar`, "stderr", 1760629056330062387, false, "foo bar")
+	f(`2025-10-16T15:37:36.330062387Z stderr F foo bar`, streamStderr, 1760629056330062387, false, "foo bar")
 
 	// Partial line
-	f(`2025-10-16T15:37:36Z stdout P partial log line`, "stdout", 1760629056000000000, true, "partial log line")
+	f(`2025-10-16T15:37:36Z stdout P partial log line`, streamStdout, 1760629056000000000, true, "partial log line")
 
 	// Empty content
-	f(`2025-10-16T15:37:36Z stdout P `, "stdout", 1760629056000000000, true, "")
+	f(`2025-10-16T15:37:36Z stdout P `, streamStdout, 1760629056000000000, true, "")
 
 	// Content with spaces
-	f(`2025-10-16T15:37:36Z stdout F  `, "stdout", 1760629056000000000, false, " ")
-	f(`2025-10-16T15:37:36Z stdout F      `, "stdout", 1760629056000000000, false, "     ")
+	f(`2025-10-16T15:37:36Z stdout F  `, streamStdout, 1760629056000000000, false, " ")
+	f(`2025-10-16T15:37:36Z stdout F      `, streamStdout, 1760629056000000000, false, "     ")
 }
 
 // Storage implements insertutil.LogRowsStorage interface
