@@ -40,7 +40,7 @@ func appendCSVField(dst []byte, s string) []byte {
 			break
 		}
 
-		n := strings.IndexByte(s, '"')
+		n = strings.IndexByte(s, '"')
 		if n < 0 {
 			dst = append(dst, s...)
 			break
