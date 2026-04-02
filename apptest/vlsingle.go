@@ -107,7 +107,7 @@ func (app *Vlsingle) JSONLineWrite(t *testing.T, records []string, opts IngestOp
 		url += "?" + uvs
 	}
 
-	_, statusCode := app.node.cli.Post(t, url, "text/plain", data)
+	_, statusCode := app.node.cli.PostWithTenant(t, opts.AccountID, opts.ProjectID, url, "text/plain", data)
 	if statusCode != http.StatusOK {
 		t.Fatalf("unexpected status code: got %d, want %d", statusCode, http.StatusOK)
 	}
@@ -154,7 +154,7 @@ func (app *Vlsingle) LogsQLQueryRaw(t *testing.T, query string, opts QueryOpts) 
 	values.Add("query", query)
 
 	url := fmt.Sprintf("http://%s/select/logsql/query", app.node.httpListenAddr)
-	return app.node.cli.PostForm(t, url, values)
+	return app.node.cli.PostFormWithTenant(t, opts.AccountID, opts.ProjectID, url, values)
 }
 
 // FieldNames sends HTTP POST request to /select/logsql/field_names endpoint and returns the plain response.
