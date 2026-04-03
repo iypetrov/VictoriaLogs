@@ -103,16 +103,6 @@ const DownloadLogsModal: FC<Props> = ({ children, queryParams }) => {
               </Alert>
             )}
 
-            {fileExtension === "csv" && (
-              <Alert
-                title="CSV Export Requirement"
-                variant="info"
-              >
-                <p>To export to CSV, specify columns at the end of your query using `| fields` or `| stats`.</p>
-                <p>Examples: `| fields _time, _msg` or `| stats by (host) count()`.</p>
-              </Alert>
-            )}
-
             <div className="vm-download-logs-footer">
               <Button
                 color="error"
