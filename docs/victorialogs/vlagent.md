@@ -365,9 +365,11 @@ and to send the collected logs to a VictoriaLogs instance at `victoria-logs:9428
 
 By default, `vlagent` uses `hostname` and `file` as [`_stream`](https://docs.victoriametrics.com/victorialogs/keyconcepts/#stream-fields) fields.
 
-`vlagent` automatically parses JSON logs and maps well-known fields to
-[`_msg`](https://docs.victoriametrics.com/victorialogs/keyconcepts/#message-field) and
-[`_time`](https://docs.victoriametrics.com/victorialogs/keyconcepts/#time-field).
+See also ready-to-use `vlagent` configuration examples for the corresponding log source:
+
+- [Collecting nginx logs](https://docs.victoriametrics.com/victorialogs/vlagent/victorialogs/vlagent/#collecting-nginx-logs).
+- [Collecting Redis logs](https://docs.victoriametrics.com/victorialogs/vlagent/victorialogs/vlagent/#collecting-redis-logs).
+- [Collecting ClickHouse logs](https://docs.victoriametrics.com/victorialogs/vlagent/victorialogs/vlagent/#collecting-clickhouse-logs).
 
 ### Glob pattern requirements
 
@@ -424,7 +426,7 @@ Note that the application must handle the signal specified in `postrotate` and r
 
 `vlagent` does not fully support the `copytruncate` rotation strategy and does not read compressed (`.gz`) files.
 
-> **Note:** if you are collecting logs from a well-known application such as nginx, Apache, or PostgreSQL,
+> Note: if you are collecting logs from a well-known application such as nginx, Apache, or PostgreSQL,
 > a `logrotate` config is most likely already preconfigured by the package and located in `/etc/logrotate.d/`.
 
 ### Checkpoints
