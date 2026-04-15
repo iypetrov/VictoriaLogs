@@ -11,7 +11,7 @@ build:
 sitemap:
   disable: true
 ---
-<!-- The file has to be manually updated during feature work in PR, make docs-update-flags command could be used periodically to ensure the flags in sync. -->
+<!-- The file has to be manually updated during feature work in PR, "TAG=... make docs-update-flags" command could be used periodically to ensure the flags in sync with the given release TAG. -->
 ```shellhelp
 endef
 export FLAGS_HEADER
@@ -164,7 +164,7 @@ docs-update-vlogscli-flags:
 	rm -f docs/victorialogs/querying/vlogscli_common_flags.md.bak
 
 # docs-update-flags updates flags in the documentation using the actual binaries compiled
-# from the latest enterprise and opensource branches (hardcoded for now).
+# from the given TAG.
 # The command also normalizes the output a bit.
 #
 # The command does not replace the need to manually update flags in the documentation when
@@ -173,7 +173,7 @@ docs-update-vlogscli-flags:
 #
 # It can be run from any branch.
 # All work happens inside temporary directories under /tmp.
-# The script checks out the required branch, builds the binaries, and updates the documentation.
+# The script checks out the required TAG, builds the binaries, and updates the documentation.
 # The current Git repository is not touched.
 docs-update-flags:
 	# Note for MacOS users:
@@ -181,16 +181,13 @@ docs-update-flags:
 	# Install using: brew install gnu-sed gawk
 	# Add tools to PATH see how in `brew info gnu-sed` and `brew info gawk`
 
-	git fetch enterprise
-	git fetch opensource
-
 	rm -rf /tmp/vl-enterprise
 	git worktree remove /tmp/vl-enterprise || true
-	git worktree add /tmp/vl-enterprise enterprise/master
+	git worktree add /tmp/vl-enterprise $(TAG)-enterprise
 
 	rm -rf /tmp/vl-opensource
 	git worktree remove /tmp/vl-opensource || true
-	git worktree add /tmp/vl-opensource opensource/master
+	git worktree add /tmp/vl-opensource $(TAG)
 
 	make docs-update-victoria-logs-flags
 	make docs-update-vlagent-flags
